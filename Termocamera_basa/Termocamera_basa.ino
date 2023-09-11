@@ -26,10 +26,10 @@ unsigned long tmr_pid;                // для отсчёта времени п
 
 void setup()
 {
-    Serial.begin(115200);             // скорость взаимодействи в мониторе порта, 9600 -- слишком мало
-    Serial.flush();                   // ждём окончания передачи предыдущих данных
+    //Serial.begin(115200);             // скорость взаимодействи в мониторе порта, 9600 -- слишком мало
+    //Serial.flush();                   // ждём окончания передачи предыдущих данных
 
-    //Serial.println("in, set, dim");   // для отображения в плоттере    
+    //Serial.println("in, set, dim");   // для отображения в плоттере
 
     pid.setLimits(500, 9500);           // ограничение выходного сигнала (по умолчанию 0-255)
     pid.setDirection(REVERSE);          // обратное воздействие: увеличению соот. уменьшение (из-за того, что 9500 соответсвует минимуму, 500 - макс. открытия симмистора)
@@ -62,9 +62,9 @@ void loop()
 void PID()
 {
   if (millis() - tmr_pid >= period)               // производим ПИД-регулирование каждую 1мс
-    {                                                                                          
+    {
         pid.setpoint = map(filt_pot.filteredTime(analogReadFast(POTEN_PIN)), 0, 1024, 20, 80); // берутся с пот-ра выставленное значение оборотов двигателя, сразу ф-ые
-        pid.input = therm.getTemp();              // получаем новые данные 
+        pid.input = therm.getTemp();              // получаем новые данные
         pid.getResult();                          // производится расчёт, определяется насколько умень/увел. выходной сигнал для соот. данным с потенциометра
         dimmer = int(expRAA(pid.output));         // на управляющее устройство даётся расчитанный сигнал
         tmr_pid = millis();
@@ -75,7 +75,7 @@ void PID()
 void serial_print()
 {
     Serial.print(pid.input);      // получаемое значение
-    Serial.print(','); 
+    Serial.print(',');
     // Serial.print(pid.output); Serial.print(',');
     Serial.println(pid.setpoint); // Serial.print(',');    //   ... выставленных потенциометром
                                   // Serial.println(dimmer);
