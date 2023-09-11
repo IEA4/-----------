@@ -1,6 +1,6 @@
 // GND --- термистор --- A7 --- 10к --- 5V
 
-//Выходы сегментов 
+//Выходы сегментов
 #define A  12
 #define B  10
 #define C  8
@@ -10,7 +10,7 @@
 #define G  A2
 #define Dp A1
 
-//Выходы транзисторных ключей 
+//Выходы транзисторных ключей
 #define R3  7
 #define R2  6
 #define R1  5
@@ -19,15 +19,16 @@
 #define DIMMER_PIN 4          // управляющий пин симистора
 #define btnPin 3              // кнопка вызова отображения на семисегментнике
 
-#define POTEN_PIN A4          // пин регулятора: выставление нужных оборотов в секунду
+#define NTC_PIN A6            // пин NTC-термистора
+#define POTEN_PIN A1          // пин регулятора: выставление нужных оборотов в секунду
 
 #define period 1              // период расчетов и изменений (мс) в ПИД-регуляторе
 
 #include "GyverPID.h"         // библиотека ПИД-регулятора      // подробнее о библиотеке https://alexgyver.ru/gyverpid/
 GyverPID pid(3000, 500, 0);   // назначение коэфов Kp, Ki, Kd   (25, 100, 0.15)      (25, 50, 0.1)    (30 50 0.1)   (30 45 0.1)   https://alexgyver.ru/lessons/pid/
 
-#include <GyverNTC.h>                            //  GND --- термистор --- A6 --- 10к --- 5V 
-GyverNTC therm(A6, 12920, 3950, 20, 9110);       //  (пин, R* термистора при 20град.С, бета-коэф, температура определения R*, сопротивление резистор от A6 к 5V)
+#include <GyverNTC.h>                            //  GND --- термистор --- A6 --- 10к --- 5V
+GyverNTC therm(NTC_PIN, 12920, 3950, 20, 9110);       //  (пин, R* термистора при 20град.С, бета-коэф, температура определения R*, сопротивление резистор от NTC_PIN к 5V)
 
 #include <FastDefFunc.h>                         // библиотека для убыстрения функций: pinMode, digitalWrite, ...Read, analogWrite, ...Read
 
@@ -59,13 +60,13 @@ void setup()
     pinModeFast(F, OUTPUT);
     pinModeFast(G, OUTPUT);
     pinModeFast(Dp, OUTPUT);
-    
+
     pinModeFast(R1, OUTPUT);
     pinModeFast(R2, OUTPUT);
     pinModeFast(R3, OUTPUT);
-  
+
     pinMode(btnPin, INPUT_PULLUP);        // кнопка притянута к земле, резистор не нужен
-  
+
     pid.setLimits(500, 9500);  // ограничение выходного сигнала (по умолчанию 0-255)
     pid.setDirection(REVERSE); // обратное воздействие: увеличению соот. уменьшение (из-за того, что 9500 соответсвует минимуму, 500 - макс. открытия симмистора)
     pid.setDt(period);         // временной шаг расчёта функции ПИД-регулятора
@@ -73,7 +74,7 @@ void setup()
     pid.integral = 9500; // ввиду REVERSE минимальное значение 9500
 
     filt_pot.setCoef(0.1); // фильтр для потенциометра //резкость фильтрации (0.00 -- 1.00), чем выше, тем больше скачков
-    
+
     Timer2.enableISR(CHANNEL_A); // подкл-но стандартное прерывание, канал B, без сдига фаз, частота ШИМ изменена на D11
 
     attachInterrupt(digitalPinToInterrupt(ZERO_PIN), isr, RISING); // функция прерывания вызывается по смене сигнала с 0 на 1
@@ -85,7 +86,7 @@ void setup()
 void loop()
 {
     button();       //функция обработки нажатия кнопки
-  
+
     while (int(filt_pot.filteredTime(analogReadFast(POTEN_PIN))) > 2)
     {
         button();
@@ -100,8 +101,8 @@ void PID()
 {
   if (millis() - tmr_pid >= period)
     {                                                                                          // производим ПИД-регулирование каждую 1мс
-        pid.setpoint = map(filt_pot.filteredTime(analogReadFast(POTEN_PIN)), 0, 1024, 80, 19); // берутся с пот-ра выставленное значение оборотов двигателя, сразу ф-ые
-        pid.input = therm.getTemp();                                                           // получаем новые данные 
+        pid.setpoint = map(filt_pot.filteredTime(analogReadFast(POTEN_PIN)), 0, 1024, 80, 20; // берутся с пот-ра выставленное значение температуры, сразу ф-ые
+        pid.input = therm.getTemp();                                                           // получаем новые данные
         pid.getResult();                                                                       // производится расчёт, определяется насколько умень/увел. выходной сигнал для соот. данным с потенциометра
         dimmer = int(expRAA(pid.output));                                                      // на управляющее устройство даётся расчитанный сигнал
         tmr_pid = millis();
@@ -111,36 +112,36 @@ void PID()
 //функция обработки нажатия кнопки
 void button()
 {
-  btn.poll(!digitalRead(btnPin));  
+  btn.poll(!digitalRead(btnPin));
   if (btn.click()){                     //был клик кнопкой
-    f_click = 1; 
+    f_click = 1;
     f_step = 0;
   }
   if (btn.step()){                      //если было удержание кнопки
-    f_step = 1; 
-    f_click = 0; 
+    f_step = 1;
+    f_click = 0;
     t_pot = millis();
   }
-    
+
   if (f_click){                         // при клике кнопкой
     filT = String((round(10 * temp_filtr.filtered(therm.getTemp())))/10.0); // получаем температуру, фильтруем, округляем до десятых
-    black_print(filT);                                                         //  ... и выводим на семисегментник 
+    black_print(filT);                                                         //  ... и выводим на семисегментник
   }
   if (f_step){                          //при удержании кнопки
-    pot = String(map(filt_pot.filteredTime(analogReadFast(POTEN_PIN)), 0, 1024, 80, 19)); //получаем значение с ротенциометра, фильтруем, конформно отображаем на другой диапазон
-    if (pot != pot_1){   
+    pot = String(map(filt_pot.filteredTime(analogReadFast(POTEN_PIN)), 0, 1024, 80, 20)); //получаем значение с потенциометра, фильтруем, конформно отображаем на другой диапазон
+    if (pot != pot_1){
       pot_1 = pot;
-      t_pot = millis();                                   
+      t_pot = millis();
     }
     black_print(pot_1);                                   //  ... и выводим на семисегментник
   }
-  
+
   if (f_click && btn.timeout(15000)){                     // если после клика прошло более 15 секунд, выключаем семисегментник
      f_click = 0;
      digitalWriteFast(R1, LOW);
      digitalWriteFast(R2, LOW);
      digitalWriteFast(R3, LOW);
-  } 
+  }
 
   if(f_step && millis() - t_pot > 15000){               // если значение на потенциометре не меняется в течении 15 секунд, выключаем семисегментник
     f_step = 0;
@@ -198,9 +199,9 @@ void black_print(String x) {
         digitalWriteFast(R1, HIGH);               // изображаем первую цифру заданного числа
         number(x[1] - '0');
       }
-      else t_s = millis();                        // чтоб начать заново высвечивать 
+      else t_s = millis();                        // чтоб начать заново высвечивать
       break;
-      
+
     case 5:                                     // для чисел больше 9 и  c плавающей точкой
       if (millis() - t_s <= 5){
         digitalWriteFast(R3, HIGH);

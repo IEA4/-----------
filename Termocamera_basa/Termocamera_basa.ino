@@ -61,9 +61,9 @@ void loop()
 // функция ПИД-регулятора
 void PID()
 {
-  if (millis() - tmr_pid >= period)               // производим ПИД-регулирование каждую 1мс
+  if (millis() - tmr_pid >= period)               // производим ПИД-регулирование каждую миллисекунду
     {
-        pid.setpoint = map(filt_pot.filteredTime(analogReadFast(POTEN_PIN)), 0, 1024, 20, 80); // берутся с пот-ра выставленное значение оборотов двигателя, сразу ф-ые
+        pid.setpoint = map(filt_pot.filteredTime(analogReadFast(POTEN_PIN)), 0, 1024, 20, 80); // берутся с пот-ра выставленное значение температуры, сразу ф-ые
         pid.input = therm.getTemp();              // получаем новые данные
         pid.getResult();                          // производится расчёт, определяется насколько умень/увел. выходной сигнал для соот. данным с потенциометра
         dimmer = int(expRAA(pid.output));         // на управляющее устройство даётся расчитанный сигнал
