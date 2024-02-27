@@ -2,7 +2,7 @@
 
 //Выходы сегментов
 #define A  12
-#define B  10
+#define B  10      // если покажет ошибку в этой строчке, прописать char B = 10;
 #define C  8
 #define D  A0
 #define E  A3
@@ -27,8 +27,8 @@
 #include "GyverPID.h"         // библиотека ПИД-регулятора      // подробнее о библиотеке https://alexgyver.ru/gyverpid/
 GyverPID pid(3000, 500, 0);   // назначение коэфов Kp, Ki, Kd   (25, 100, 0.15)      (25, 50, 0.1)    (30 50 0.1)   (30 45 0.1)   https://alexgyver.ru/lessons/pid/
 
-#include <GyverNTC.h>                            //  GND --- термистор --- A6 --- 10к --- 5V
-GyverNTC therm(NTC_PIN, 12920, 3950, 20, 9110);       //  (пин, R* термистора при 20град.С, бета-коэф, температура определения R*, сопротивление резистор от NTC_PIN к 5V)
+#include <GyverNTC.h>                            //  GND --- термистор --- A6 --- 10к --- 5V / бета-коэф 3950 несоответствует опыту, подходит 3490
+GyverNTC therm(NTC_PIN, 10000, 3490, 22, 11640);       //  (пин, R* термистора при 20град.С, бета-коэф, температура определения R*, сопротивление резистор от NTC_PIN к 5V)
 
 #include <FastDefFunc.h>                         // библиотека для убыстрения функций: pinMode, digitalWrite, ...Read, analogWrite, ...Read
 
@@ -101,7 +101,7 @@ void PID()
 {
   if (millis() - tmr_pid >= period)
     {                                                                                          // производим ПИД-регулирование каждую 1мс
-        pid.setpoint = map(filt_pot.filteredTime(analogReadFast(POTEN_PIN)), 0, 1024, 80, 20; // берутся с пот-ра выставленное значение температуры, сразу ф-ые
+        pid.setpoint = map(filt_pot.filteredTime(analogReadFast(POTEN_PIN)), 0, 1024, 80, 20); // берутся с пот-ра выставленное значение температуры, сразу ф-ые
         pid.input = therm.getTemp();                                                           // получаем новые данные
         pid.getResult();                                                                       // производится расчёт, определяется насколько умень/увел. выходной сигнал для соот. данным с потенциометра
         dimmer = int(expRAA(pid.output));                                                      // на управляющее устройство даётся расчитанный сигнал
